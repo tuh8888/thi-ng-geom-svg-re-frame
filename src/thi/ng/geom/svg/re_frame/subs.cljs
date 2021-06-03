@@ -8,4 +8,5 @@
   (fn [[_ id] _] (subscribe [::view-box id]))
   ;; Convert view-box info to string representation
   (fn [{:keys [x y width height scale]} _]
+    (println x y width height)
     (apply str (interpose " " [x y (* scale width) (* scale height)]))))

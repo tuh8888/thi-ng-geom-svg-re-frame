@@ -6,21 +6,25 @@
   trim-v
   (fn
     [db
-     [id {:keys [x y width height scale zoom-speed]
-          :or   {x          0
-                 y          0
-                 width      600
-                 height     500
-                 scale      1
-                 zoom-speed 1}}]]
+     [id {:keys [x y width height scale]
+          :or {x      0
+               y      0
+               width  600
+               height 500
+               scale  1}
+          {:keys [speed increment]
+           :or   {speed     1
+                  increment 0.1}}
+          :zoom}]]
     (assoc-in db
      [::svg-rf/id id :view-box]
-     {:x          x
-      :y          y
-      :width      width
-      :height     height
-      :scale      scale
-      :zoom-speed zoom-speed})))
+     {:x      x
+      :y      y
+      :width  width
+      :height height
+      :scale  scale
+      :zoom   {:speed     speed
+               :increment increment}})))
 
 (defn apply-coord
   [f {x1 :x
@@ -49,14 +53,17 @@
 (reg-event-db ::zoom-view
   trim-v
   (fn [db [id x point]]
-    (let [{:keys [scale zoom-speed]
-           :as   view-box}
+    (let [{:keys                     [scale]
+           {:keys [speed increment]} :zoom
+           :as                       view-box}
           (get-in db [::svg-rf/id id :view-box])
-          new-scale (* scale (+ 1 (* (if (pos? x) 1 -1) zoom-speed 0.1)))
+          new-scale (max 1E-10
+                         (* scale ((if (pos? x) + -) 1 (* speed increment))))
           scale-frac (/ new-scale scale)
           t-point (apply-coord +
                                (apply-coord * point (- 1 scale-frac))
                                (apply-coord * view-box scale-frac))]
+      (println scale (+ 1 (* (if (pos? x) 1 -1) speed increment)))
       (-> db
           (assoc-in [::svg-rf/id id :view-box :scale] new-scale)
           (update-in [::svg-rf/id id :view-box] merge t-point)))))
