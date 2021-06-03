@@ -16,9 +16,10 @@
 *** ::subs/view-box
     The current view-box as:
 #+BEGIN_SRC clojure
-{:height height
- :scale  scale
- :width  width
- :x      x
- :y      y}
+{:x          0
+ :y          0
+ :height     500
+ :width      300
+ :scale      1
+ :zoom-speed 1}
 #+END_SRC

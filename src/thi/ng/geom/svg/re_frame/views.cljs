@@ -9,23 +9,19 @@
             [re-frame.core :as rf]))
 
 (defn dragged
-  [origin point e]
+  [id origin point e]
   (when-let [o @origin]
     (.preventDefault e)
-    (rf/dispatch-sync [::evts/translate-view o point])))
+    (rf/dispatch-sync [::evts/translate-view id o point])))
 
-(defn end-drag [origin _ _] (reset! origin nil))
+(defn end-drag [_ origin _ _] (reset! origin nil))
 
-(defn start-drag [origin point _] (reset! origin point))
-
-(defn view-box-string
-  [{:keys [x y width height]}]
-  (apply str (interpose " " [x y width height])))
+(defn start-drag [_ origin point _] (reset! origin point))
 
 (defn zoom
-  [_ point e]
+  [id _ point e]
   (.preventDefault e)
-  (rf/dispatch-sync [::evts/zoom-view (.-deltaY e) point]))
+  (rf/dispatch-sync [::evts/zoom-view id (.-deltaY e) point]))
 
 (defn event-point
   [svg e]
@@ -37,7 +33,7 @@
        :y (.-y t-point)})))
 
 (defn svg-component
-  [svg-attribs scene]
+  [id view-box svg-attribs scene]
   (let [origin (atom nil)]
     (letfn [(add-interaction
              [this]
@@ -49,26 +45,27 @@
                               :wheel      zoom}]
                  (.addEventListener dnode
                                     (name k)
-                                    #(f origin (event-point dnode %) %)))))]
-      (r/create-class
-       {:component-did-mount  add-interaction
-        :component-did-update add-interaction
-        :reagent-render       (fn [svg-attribs scene]
-                                (let [svg-attribs (assoc
-                                                   svg-attribs
-                                                   :view-box
-                                                   (view-box-string
-                                                    @(rf/subscribe
-                                                      [::subs/view-box])))]
-                                  (-> scene
-                                      (->> (svg/svg svg-attribs)
-                                           adapt/all-as-svg
-                                           (adapt/inject-element-attribs
-                                            adapt/key-attrib-injector))
-                                      (update 1
-                                              set/rename-keys
-                                              {"xmlns:xlink"
-                                               "xmlnsXlink"}))))}))))
+                                    #(f id origin (event-point dnode %) %)))))]
+      (r/create-class {:component-did-mount (fn [this]
+                                              (rf/dispatch-sync [::evts/init-svg
+                                                                 id view-box])
+                                              (add-interaction this))
+                       :component-did-update add-interaction
+                       :reagent-render
+                       (fn [svg-attribs scene]
+                         (let [svg-attribs (assoc svg-attribs
+                                                  :view-box
+                                                  @(rf/subscribe
+                                                    [::subs/view-box-string
+                                                     id]))]
+                           (-> scene
+                               (->> (svg/svg svg-attribs)
+                                    adapt/all-as-svg
+                                    (adapt/inject-element-attribs
+                                     adapt/key-attrib-injector))
+                               (update 1
+                                       set/rename-keys
+                                       {"xmlns:xlink" "xmlnsXlink"}))))}))))
 
 (defn tspan [& args] (assoc (apply svg/text args) 0 :tspan))
 
