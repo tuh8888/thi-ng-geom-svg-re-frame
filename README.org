@@ -1,0 +1,24 @@
+* thi.ng.geom.svg/re-frame
+  This library provides views, events, and subscriptions for working with [[https://github.com/thi-ng/geom][thi.ng/geom]] SVG objects in [[https://github.com/day8/re-frame][re-frame]] apps.
+** Views
+*** svg-component
+    This is the main component that this library offers. It adapts a thi.ng/geom scene to SVG hiccup. This conversion is fairly minor, but it handles adding key meta-data and updating the view-box. Built-in interaction includes:
+    - Zoom
+    - Drag
+*** tspans and multi-line-text
+    These are a minor offering, but SVG doesn't currently support word-wrapping or other multiline text, so this component fills in that missing functionality. This most likely could be submitted to thi.ng/geom as a pull request feature. I may do so when I have time to get around to it. For now, I include it here.
+** Events
+*** ::events/translate-view
+    Translate the SVG view (via mouse drag). Given the original mouse-clicked point (origin), the current mouse position (point), and the view-box position, move the view-box to ~view-box - (point - origin)~.
+*** ::events/zoom-view
+    Zoom the SVG view (via mouse wheel).  Takes into account the polarity (positive/negative) of the mouse wheel direction, a zoom-speed, and the current scaling factor, computes the new scaling factor using ~scale * (1 + (zoom-speed * 0.1 * polarity))*~.
+** Subs
+*** ::subs/view-box
+    The current view-box as:
+#+BEGIN_SRC clojure
+{:height height
+ :scale  scale
+ :width  width
+ :x      x
+ :y      y}
+#+END_SRC
