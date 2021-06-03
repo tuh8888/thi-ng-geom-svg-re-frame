@@ -4,7 +4,23 @@
 
 (reg-event-db ::init-svg
   trim-v
-  (fn [db [id view-box]] (assoc-in db [::svg-rf/id id :view-box] view-box)))
+  (fn
+    [db
+     [id {:keys [x y width height scale zoom-speed]
+          :or   {x          0
+                 y          0
+                 width      600
+                 height     500
+                 scale      1
+                 zoom-speed 1}}]]
+    (assoc-in db
+     [::svg-rf/id id :view-box]
+     {:x          x
+      :y          y
+      :width      width
+      :height     height
+      :scale      scale
+      :zoom-speed zoom-speed})))
 
 (defn apply-coord
   [f {x1 :x
@@ -21,26 +37,26 @@
 
 (reg-event-db ::translate-view
   trim-v
-  (fn [{:keys [view-box]
-        :as   db} [id origin point]]
-    (update-in db
-               [::svg-rf/id id :view-box]
-               merge
-               (->> origin
-                    (apply-coord - point)
-                    (apply-coord - view-box)))))
+  (fn [db [id origin point]]
+    (let [view-box (get-in db [::svg-rf/id id :view-box])]
+      (update-in db
+                 [::svg-rf/id id :view-box]
+                 merge
+                 (->> origin
+                      (apply-coord - point)
+                      (apply-coord - view-box))))))
 
 (reg-event-db ::zoom-view
   trim-v
-  (fn [{:as db
-        {:keys [scale zoom-speed]
-         :as   view-box}
-        :view-box} [id x point]]
-    (let [new-scale  (* scale (+ 1 (* (if (pos? x) 1 -1) zoom-speed 0.1)))
+  (fn [db [id x point]]
+    (let [{:keys [scale zoom-speed]
+           :as   view-box}
+          (get-in db [::svg-rf/id id :view-box])
+          new-scale (* scale (+ 1 (* (if (pos? x) 1 -1) zoom-speed 0.1)))
           scale-frac (/ new-scale scale)
-          t-point    (apply-coord +
-                                  (apply-coord * point (- 1 scale-frac))
-                                  (apply-coord * view-box scale-frac))]
+          t-point (apply-coord +
+                               (apply-coord * point (- 1 scale-frac))
+                               (apply-coord * view-box scale-frac))]
       (-> db
           (assoc-in [::svg-rf/id id :view-box :scale] new-scale)
           (update-in [::svg-rf/id id :view-box] merge t-point)))))
