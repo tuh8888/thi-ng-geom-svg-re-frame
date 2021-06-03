@@ -34,6 +34,7 @@
 
 (defn svg-component
   [id svg-attribs _]
+  (rf/dispatch-sync [::evts/init-svg id (:view-box svg-attribs)])
   (let [origin (atom nil)]
     (letfn [(add-interaction
              [this]
@@ -46,27 +47,23 @@
                  (.addEventListener dnode
                                     (name k)
                                     #(f id origin (event-point dnode %) %)))))]
-      (r/create-class {:component-did-mount (fn [this]
-                                              (rf/dispatch-sync
-                                               [::evts/init-svg id
-                                                (:view-box svg-attribs)])
-                                              (add-interaction this))
+      (r/create-class {:component-did-mount add-interaction
                        :component-did-update add-interaction
                        :reagent-render
                        (fn [id svg-attribs scene]
-                         (when-let [view-box @(rf/subscribe
-                                               [::subs/view-box-string id])]
-                           (let [svg-attribs (assoc svg-attribs
-                                                    :view-box
-                                                    view-box)]
-                             (-> scene
-                                 (->> (svg/svg svg-attribs)
-                                      adapt/all-as-svg
-                                      (adapt/inject-element-attribs
-                                       adapt/key-attrib-injector))
-                                 (update 1
-                                         set/rename-keys
-                                         {"xmlns:xlink" "xmlnsXlink"})))))}))))
+                         (let [view-box    @(rf/subscribe
+                                             [::subs/view-box-string id])
+                               svg-attribs (assoc svg-attribs
+                                                  :view-box
+                                                  view-box)]
+                           (-> scene
+                               (->> (svg/svg svg-attribs)
+                                    adapt/all-as-svg
+                                    (adapt/inject-element-attribs
+                                     adapt/key-attrib-injector))
+                               (update 1
+                                       set/rename-keys
+                                       {"xmlns:xlink" "xmlnsXlink"}))))}))))
 
 (defn tspan [& args] (assoc (apply svg/text args) 0 :tspan))
 
