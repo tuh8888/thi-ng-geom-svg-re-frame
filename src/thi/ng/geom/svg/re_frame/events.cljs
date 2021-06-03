@@ -4,7 +4,7 @@
 
 (reg-event-db ::init-svg
   trim-v
-  (fn [db [id view-box]] (assoc-in db [::svg-rf/id id] view-box)))
+  (fn [db [id view-box]] (assoc-in db [::svg-rf/id id :view-box] view-box)))
 
 (defn apply-coord
   [f {x1 :x

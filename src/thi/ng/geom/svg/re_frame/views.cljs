@@ -52,7 +52,7 @@
                                               (add-interaction this))
                        :component-did-update add-interaction
                        :reagent-render
-                       (fn [svg-attribs scene]
+                       (fn [id _ svg-attribs scene]
                          (let [svg-attribs (assoc svg-attribs
                                                   :view-box
                                                   @(rf/subscribe
