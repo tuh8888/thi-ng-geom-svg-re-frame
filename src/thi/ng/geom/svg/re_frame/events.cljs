@@ -1,6 +1,6 @@
 (ns thi.ng.geom.svg.re-frame.events
-  (:require [re-frame.core :refer [reg-event-db trim-v]
-             thi.ng.geom.svg.re-frame.core :as svg-rf]))
+  (:require [re-frame.core :refer [reg-event-db trim-v]]
+            [thi.ng.geom.svg.re-frame.core :as svg-rf]))
 
 (reg-event-db ::init-svg
   trim-v

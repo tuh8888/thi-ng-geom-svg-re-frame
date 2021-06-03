@@ -1,5 +1,6 @@
 (ns thi.ng.geom.svg.re-frame.subs
-  (:require [re-frame.core :refer [reg-sub subscribe]]))
+  (:require [re-frame.core :refer [reg-sub subscribe]]
+            [thi.ng.geom.svg.re-frame.core :as svg-rf]))
 
 
 (reg-sub ::view-box (fn [db [_ id]] (get-in db [::svg-rf/id id :view-box])))
