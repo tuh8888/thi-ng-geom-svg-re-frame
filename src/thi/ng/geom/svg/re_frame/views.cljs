@@ -1,12 +1,13 @@
 (ns thi.ng.geom.svg.re-frame.views
-  (:require [thi.ng.geom.svg.re-frame.events :as evts]
-            [thi.ng.geom.svg.re-frame.subs :as subs]
-            [thi.ng.geom.svg.core :as svg]
-            [thi.ng.geom.svg.adapter :as adapt]
-            [clojure.set :as set]
-            [reagent.core :as r]
-            [reagent.dom :as rdom]
-            [re-frame.core :as rf]))
+  (:require
+   [thi.ng.geom.svg.re-frame.events :as evts]
+   [thi.ng.geom.svg.re-frame.subs :as subs]
+   [thi.ng.geom.svg.core :as svg]
+   [thi.ng.geom.svg.adapter :as adapt]
+   [clojure.set :as set]
+   [reagent.core :as r]
+   [reagent.dom :as rdom]
+   [re-frame.core :as rf]))
 
 (defn dragged
   [id origin point e]
@@ -36,34 +37,33 @@
   [id svg-attribs _]
   (rf/dispatch-sync [::evts/init-svg id (:view-box svg-attribs)])
   (let [origin (atom nil)]
-    (letfn [(add-interaction
-             [this]
-             (let [dnode (rdom/dom-node this)]
-               (doseq [[k f] {:mousedown  start-drag
-                              :mousemove  dragged
-                              :mouseup    end-drag
-                              :mouseleave end-drag
-                              :wheel      zoom}]
-                 (.addEventListener dnode
-                                    (name k)
-                                    #(f id origin (event-point dnode %) %)))))]
-      (r/create-class {:component-did-mount add-interaction
-                       :component-did-update add-interaction
-                       :reagent-render
-                       (fn [id svg-attribs scene]
-                         (let [view-box    @(rf/subscribe
-                                             [::subs/view-box-string id])
-                               svg-attribs (assoc svg-attribs
-                                                  :view-box
-                                                  view-box)]
-                           (-> scene
-                               (->> (svg/svg svg-attribs)
-                                    adapt/all-as-svg
-                                    (adapt/inject-element-attribs
-                                     adapt/key-attrib-injector))
-                               (update 1
-                                       set/rename-keys
-                                       {"xmlns:xlink" "xmlnsXlink"}))))}))))
+    (letfn [(add-interaction [this]
+              (let [dnode (rdom/dom-node this)]
+                (doseq [[k f] {:mousedown  start-drag
+                               :mousemove  dragged
+                               :mouseup    end-drag
+                               :mouseleave end-drag
+                               :wheel      zoom}]
+                  (.addEventListener dnode
+                                     (name k)
+                                     #(f id origin (event-point dnode %) %)))))]
+      (r/create-class
+       {:component-did-mount  add-interaction
+        :component-did-update add-interaction
+        :reagent-render       (fn [id svg-attribs scene]
+                                (let [view-box    @(rf/subscribe
+                                                    [::subs/view-box-string id])
+                                      svg-attribs (assoc svg-attribs
+                                                         :view-box
+                                                         view-box)]
+                                  (-> scene
+                                      (->> (svg/svg svg-attribs)
+                                           adapt/all-as-svg
+                                           (adapt/inject-element-attribs
+                                            adapt/key-attrib-injector))
+                                      (update 1
+                                        set/rename-keys
+                                        {"xmlns:xlink" "xmlnsXlink"}))))}))))
 
 (defn tspan [& args] (assoc (apply svg/text args) 0 :tspan))
 
